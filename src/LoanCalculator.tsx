@@ -9,15 +9,15 @@ import {
   createTheme,
   InputAdornment,
 } from "@mui/material";
-import { LineChart } from "@mui/x-charts";
 import {
   analyseLoanRepayment,
   calculateMinimumRepayment,
 } from "./utils/loanCalculatorUtils";
 import { formatToAud } from "./utils/currencyUtils";
 import LoanBreakdownTable from "./components/LoanBreakdownTable";
-import { LoanBreakdown } from "./utils/data";
+import { LoanRepaymentAnalysis } from "./utils/data";
 import { formatMonthsToStr } from "./utils/dateUtils";
+import LoanChart from "./components/LoanChart";
 
 const theme = createTheme({
   spacing: 8,
@@ -54,13 +54,13 @@ export default function LoanCalculator() {
   const [additionalRepayment, setAdditionalRepayment] = useState<number>(0);
   const [startingOffsetBalance, setStartingOffsetBalance] = useState<number>(0);
   const [monthlyOffsetDeposit, setMonthlyOffsetDeposit] = useState<number>(0);
+  const [offsetBalanceWhenFinish, setOffsetBalanceWhenFinish] =
+    useState<number>(0);
 
   const [repaymentMonths, setRepaymentMonths] = useState<number>(0);
 
-  const [xAxisYear, setXAxisYear] = useState<number[]>([]);
-  const [graphData, setGraphData] = useState<number[]>([]);
-
-  const [loanBreakdowns, setLoanBreakdowns] = useState<LoanBreakdown[]>([]);
+  const [loanRepaymentAnalysis, setLoanRepaymentAnalysis] =
+    useState<LoanRepaymentAnalysis | null>(null);
 
   const minimumRepayment = useMemo(() => {
     return calculateMinimumRepayment(loan, interestRate, term * 12);
@@ -76,19 +76,15 @@ export default function LoanCalculator() {
       monthlyOffsetDeposit
     );
 
-    setRepaymentMonths(analysis.monthsRepayment);
+    setLoanRepaymentAnalysis(analysis);
+    setRepaymentMonths(analysis.repayment);
     setTotalPayment(analysis.totalPayment);
     setInterestPayment(analysis.totalInterest);
 
-    const labels = Array.from({ length: term + 1 }, (_, i) => i);
-    const data = analysis.loanBreakdowns
-      .filter((_, i) => i % 12 === 0)
-      .map((breakdown) => breakdown.principal);
-
-    setXAxisYear(labels);
-    setGraphData(data);
-
-    setLoanBreakdowns(analysis.loanBreakdowns);
+    setOffsetBalanceWhenFinish(
+      analysis.loanBreakdowns.find((breakdown) => breakdown.principal === 0)
+        ?.offsetBalance ?? 0
+    );
   };
 
   return (
@@ -172,15 +168,14 @@ export default function LoanCalculator() {
                 )})`
               : "")}
         </Typography>
+        <Typography variant="h6" gutterBottom>
+          Offset Balance when loan finished:{" "}
+          {formatToAud(offsetBalanceWhenFinish)}
+        </Typography>
         <Box display="flex" justifyContent="center">
-          <LineChart
-            xAxis={[{ data: xAxisYear }]}
-            series={[{ data: graphData }]}
-            height={700}
-            width={800}
-          />
+          <LoanChart loanRepaymentAnalysis={loanRepaymentAnalysis} />
         </Box>
-        <LoanBreakdownTable loanBreakdowns={loanBreakdowns} />
+        <LoanBreakdownTable loanRepaymentAnalysis={loanRepaymentAnalysis} />
       </Container>
     </ThemeProvider>
   );

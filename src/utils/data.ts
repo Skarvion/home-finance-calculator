@@ -1,14 +1,17 @@
+export type Frequency = "yearly" | "monthly" | "fortnightly" | "weekly";
+
 export type LoanBreakdown = {
-  month: number;
+  term: number;
   principal: number;
   interest: number;
   offsetBalance: number;
-  // availableCash: number;
 };
 
 export type LoanRepaymentAnalysis = {
+  totalTerms: number;
+  frequency: Frequency;
   loanBreakdowns: LoanBreakdown[];
-  monthsRepayment: number;
+  repayment: number;
   totalPayment: number;
   totalInterest: number;
 };

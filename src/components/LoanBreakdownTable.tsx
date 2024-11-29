@@ -5,17 +5,23 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  Typography,
 } from "@mui/material";
-import { LoanBreakdown } from "../utils/data";
+// import { LoanBreakdown, LoanRepaymentAnalysis } from "../utils/data";
 import { formatToAud } from "../utils/currencyUtils";
+import { LoanRepaymentAnalysis } from "../utils/data";
 
 export type LoanBreakdownTableProps = {
-  loanBreakdowns: LoanBreakdown[];
+  loanRepaymentAnalysis: LoanRepaymentAnalysis | null;
 };
 
 export default function LoanBreakdownTable({
-  loanBreakdowns,
+  loanRepaymentAnalysis,
 }: Readonly<LoanBreakdownTableProps>) {
+  if (!loanRepaymentAnalysis) {
+    return <Typography>No data</Typography>;
+  }
+
   return (
     <TableContainer>
       <Table>
@@ -28,9 +34,9 @@ export default function LoanBreakdownTable({
           </TableRow>
         </TableHead>
         <TableBody>
-          {loanBreakdowns.map((row, index) => (
+          {loanRepaymentAnalysis.loanBreakdowns.map((row, index) => (
             <TableRow key={index}>
-              <TableCell>{row.month}</TableCell>
+              <TableCell>{row.term}</TableCell>
               <TableCell>{formatToAud(row.principal)}</TableCell>
               <TableCell>{formatToAud(row.interest)}</TableCell>
               <TableCell>{formatToAud(row.offsetBalance)}</TableCell>

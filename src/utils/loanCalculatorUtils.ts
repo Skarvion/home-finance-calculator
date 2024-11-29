@@ -1,4 +1,5 @@
 import { LoanBreakdown, LoanRepaymentAnalysis } from "./data";
+import { isTermFirstInAYear } from "./dateUtils";
 
 export function calculateMinimumRepayment(
   loan: number,
@@ -32,11 +33,10 @@ export function analyseLoanRepayment(
 
   const loanBreakdowns: LoanBreakdown[] = [
     {
-      month: 0,
+      term: 0,
       principal: loan,
       interest: 0,
       offsetBalance: startingOffsetBalance,
-      // availableCash,
     },
   ];
 
@@ -58,7 +58,7 @@ export function analyseLoanRepayment(
 
     months++;
     loanBreakdowns.push({
-      month: months,
+      term: months,
       principal: leftOver,
       interest: monthlyInterest,
       offsetBalance,
@@ -66,9 +66,50 @@ export function analyseLoanRepayment(
   }
 
   return {
+    frequency: "monthly",
+    totalTerms: termInMonths,
     loanBreakdowns,
-    monthsRepayment,
+    repayment: monthsRepayment,
     totalPayment,
     totalInterest,
+  };
+}
+
+export function convertAnalysisFrequencyToYearly(
+  loanRepaymentAnalysis: LoanRepaymentAnalysis
+): LoanRepaymentAnalysis {
+  if (loanRepaymentAnalysis.frequency === "yearly") {
+    return loanRepaymentAnalysis;
+  }
+
+  const loanBreakdowns = loanRepaymentAnalysis.loanBreakdowns;
+  const newLoanBreakdowns: LoanBreakdown[] = [];
+  let yearlyTerm = 0;
+  let accruedInterest = 0;
+
+  for (let i = 0; i < loanBreakdowns.length; i++) {
+    const loanBreakdown = loanBreakdowns[i];
+    if (
+      isTermFirstInAYear(loanBreakdown.term, loanRepaymentAnalysis.frequency)
+    ) {
+      newLoanBreakdowns.push({
+        term: yearlyTerm,
+        principal: loanBreakdown.principal,
+        interest: accruedInterest,
+        offsetBalance: loanBreakdown.offsetBalance,
+      });
+      yearlyTerm++;
+      accruedInterest = 0;
+    }
+    accruedInterest += loanBreakdown.interest;
+  }
+
+  return {
+    frequency: "yearly",
+    totalTerms: yearlyTerm,
+    loanBreakdowns: newLoanBreakdowns,
+    repayment: loanRepaymentAnalysis.repayment,
+    totalPayment: loanRepaymentAnalysis.totalPayment,
+    totalInterest: loanRepaymentAnalysis.totalInterest,
   };
 }
